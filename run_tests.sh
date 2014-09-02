@@ -1,3 +1,5 @@
+python -c "import yael; print(dir(yael))"
+python -c "from yael import yael; print(dir(yael)); print(yael.__package__)"
 python test/test_ctypes.py 
 python test/test_kmeans_alt_dist.py
 
