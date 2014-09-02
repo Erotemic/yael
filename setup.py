@@ -9,7 +9,7 @@ INSTALL_REQUIRES = [
 
 if __name__ == '__main__':
     setuptools.setup(
-        name='yael_v401',
+        name='yael',
         packages=['yael'],
         #packages=util_setup.find_packages(),
         #version='0.0.0.autogen',
