@@ -1,64 +1,61 @@
-
 import sys
-
-from yael.yael import *
-
+from yael import *  # NOQA
 from numpy import array
 
-print "Testing Yael <-> numpy interface"
+print("Testing Yael <-> numpy interface")
 
 if "fvec_to_numpy" not in globals():
-  print "Numpy interface not compiled in"
-  sys.exit(1)
+    print("Numpy interface not compiled in")
+    sys.exit(1)
 
-print "float array"
+print("float array")
 
-numpy_a=array(range(5),dtype='float32')
+numpy_a = array(list(range(5)), dtype='float32')
 
-print numpy_a
+print(numpy_a)
 
-print "-> Yael"
+print("-> Yael")
 
-yael_a=FloatArray.acquirepointer(numpy_to_fvec(numpy_a))
-n=numpy_a.size
+yael_a = FloatArray.acquirepointer(numpy_to_fvec(numpy_a))
+n = numpy_a.size
 
-fvec_print(yael_a,n)
+fvec_print(yael_a, n)
 
-print "-> Numpy"
+print("-> Numpy")
 
-print fvec_to_numpy(yael_a,n)
+print(fvec_to_numpy(yael_a, n))
 
-print "int array"
+print("int array")
 
-numpy_a=array(range(5),dtype='int32')
+numpy_a = array(list(range(5)), dtype='int32')
 
-print numpy_a
+print(numpy_a)
 
-print "-> Yael"
+print("-> Yael")
 
-yael_a=IntArray.acquirepointer(numpy_to_ivec(numpy_a))
-n=numpy_a.size
+yael_a = IntArray.acquirepointer(numpy_to_ivec(numpy_a))
+n = numpy_a.size
 
-ivec_print(yael_a,n)
+ivec_print(yael_a, n)
 
-print "-> Numpy"
+print("-> Numpy")
 
-print ivec_to_numpy(yael_a,n)
+print(ivec_to_numpy(yael_a, n))
 
-print "float array, pass by reference"
+print("float array, pass by reference")
 
 
-numpy_a=array(range(5),dtype='float32')
+numpy_a = array(list(range(5)), dtype='float32')
 
-print numpy_a
+print(numpy_a)
 
-yael_a=FloatArray.acquirepointer(numpy_to_fvec_ref(numpy_a))
-n=numpy_a.size
+yael_a = FloatArray.acquirepointer(numpy_to_fvec_ref(numpy_a))
+n = numpy_a.size
 
-fvec_print(yael_a,n)
+fvec_print(yael_a, n)
 
 del numpy_a
 
-print "Crash!"
+print("Crash!")
 
-fvec_print(yael_a,n)
+fvec_print(yael_a, n)
