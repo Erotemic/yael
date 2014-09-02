@@ -16,7 +16,6 @@ sudo python setup.py develop
 #-msse4
    
 
-
 uninstall_yael(){
     cd $CODE_DIR/yael
     export PYSITE=$(python -c "import site; print(site.getsitepackages()[0])")
@@ -30,7 +29,8 @@ uninstall_yael(){
 
 }
 
-
+ 
+# Pip whines without a remote
 sh -c 'cat > .git/config << EOF
 [core]
     repositoryformatversion = 0
