@@ -1,2 +1,17 @@
 yael_mini_demo_v0.2
 yael.egg-info
+selective_match_kernel_v289
+ 
+
+*.o
+*.pyc
+*.so
+*_wrap.c
+makefile.inc
+progs/bvecfile
+progs/fvecfile
+progs/ivecfile
+progs/kmeans
+progs/knn
+yael/libyael.a
+yael/yael.py
