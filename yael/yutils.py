@@ -3,12 +3,21 @@ import sys, os, types
 import yael
 
 
-def load_ext(filename, nrows=1, bounds=None, verbose=False):
+def load_ext(filename, ndims=None, bounds=None, verbose=False):
     """ port of matlab version """
 
     from os.path import splitext
     ext = splitext(filename)[1].lower()
-    if bounds is not None:
+    if not ext:
+        raise ValueError('The filename should have an extension')
+
+    if ndims is None:
+        needs_reshape = False
+        ndims = 1
+    else:
+        needs_reshape = True
+
+    if bounds is None:
         nmin = 1
         nmax = None
     elif not hasattr(bounds, '__getitem__'):
@@ -26,35 +35,53 @@ def load_ext(filename, nrows=1, bounds=None, verbose=False):
     elif ext == '.ivecs':
         return yael.ivecs_read(filename)
 
+    # alias_map = {
+    #     '.uchar': '.uint8',
+    #     '.int': '.int32',
+    #     '.uint': '.uint32',
+    #     '.float': '.float32',
+    #     '.f32': '.float32',
+    #     '.single': '.float32',
+    # }
+    # nbytes_map = {
+    #     '.uint8': 1, '.int32': 4, '.uint32': 4, '.float32': 4,
+    # }
+    # ext = alias_map.get(ext, ext)
+    # nbytes = nbytes_map[ext]
+
     BOF = 0  # begining of file
     import numpy as np
     if ext in ['.uint8', '.uchar']:
         if verbose:
             print('< load int file %s' % (filename,))
         with open(filename, 'rb') as fid:
-            fid.seek((nmin - 1) * nrows, BOF)
+            fid.seek((nmin - 1) * ndims, BOF)
             X = np.fromstring(fid.read(), dtype=np.uint8)
-    elif ext in {'.int', 'int32'}:
+    elif ext in {'.int', '.int32'}:
         if verbose:
             print('< load int file %s' % (filename,))
         # fid = open(filename, 'rb')
         with open(filename, 'rb') as fid:
-            fid.seek(4 * (nmin - 1) * nrows, BOF)
+            fid.seek(4 * (nmin - 1) * ndims, BOF)
             X = np.fromstring(fid.read(), dtype=np.int32)
     elif ext in {'.uint', '.uint32'}:
         if verbose:
             print('< load int file %s' % (filename,))
         with open(filename, 'rb') as fid:
-            fid.seek(4 * (nmin - 1) * nrows, BOF)
+            fid.seek(4 * (nmin - 1) * ndims, BOF)
             X = np.fromstring(fid.read(), dtype=np.uint32)
     elif ext in {'.float', '.f32', '.float32', '.single'}:
         if verbose:
             print('< load raw float32 file %s' % (filename,))
         with open(filename, 'rb') as fid:
-            fid.seek(4 * (nmin - 1) * nrows, BOF)
+            fid.seek(4 * (nmin - 1) * ndims, BOF)
             X = np.fromstring(fid.read(), dtype=np.float32)
     else:
         raise ValueError('Unknown extension: %s' % (ext,))
+
+    if needs_reshape:
+        assert X.size % ndims == 0
+        X = X.reshape(X.size // ndims, ndims)
     return X
 
 
