@@ -1,12 +1,21 @@
 #export FC="gfortran"
 #export FFLAGS="-g -O3 -fdefault-integer-8 -fPIC" 
 
+install_prereq()
+{
+    sudo apt-get install libblas-dev liblapack-dev
+    sudo apt-get install swig
+}
+
 #sudo apt-get install libarpack2-dev
 #sudo apt-get install libsuperlu3-dev 
 #sudo apt-get install gfortran 
+
+export CXX_FLAGS="$CXX_FLAGS -I/home/joncrall/venv2/local/lib/python2.7/site-packages/numpy-1.11.1-py2.7-linux-x86_64.egg/numpy/core/include"
  
-./configure.sh --enable-numpy --enable-arpack
-sed -i "s/lib64\/libarpack.so.2/lib\/libarpack.so.2/" makefile.inc 
+#./configure.sh --enable-numpy --enable-arpack --msse4
+./configure.sh --enable-numpy --msse4
+#sed -i "s/lib64\/libarpack.so.2/lib\/libarpack.so.2/" makefile.inc 
 #./configure.sh --enable-numpy
 
 make

@@ -189,7 +189,7 @@ cat <<EOF | tee makefile.inc
 
 CC=gcc
 
-CFLAGS=$cflags
+CFLAGS=$cflags$numpycflags
 LDFLAGS=$ldflags
 
 PYTHONCFLAGS = $pythoncflags
