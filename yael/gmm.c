@@ -1,41 +1,3 @@
-/*
-Copyright © INRIA 2010-2011. 
-Authors: Matthijs Douze & Herve Jegou 
-Contact: matthijs.douze@inria.fr  herve.jegou@inria.fr
-
-This software is a computer program whose purpose is to provide 
-efficient tools for basic yet computationally demanding tasks, 
-such as find k-nearest neighbors using exhaustive search 
-and kmeans clustering. 
-
-This software is governed by the CeCILL license under French law and
-abiding by the rules of distribution of free software.  You can  use, 
-modify and/ or redistribute the software under the terms of the CeCILL
-license as circulated by CEA, CNRS and INRIA at the following URL
-"http://www.cecill.info". 
-
-As a counterpart to the access to the source code and  rights to copy,
-modify and redistribute granted by the license, users are provided only
-with a limited warranty  and the software's author,  the holder of the
-economic rights,  and the successive licensors  have only  limited
-liability. 
-
-In this respect, the user's attention is drawn to the risks associated
-with loading,  using,  modifying and/or developing or reproducing the
-software by the user in light of its specific status of free software,
-that may mean  that it is complicated to manipulate,  and  that  also
-therefore means  that it is reserved for developers  and  experienced
-professionals having in-depth computer knowledge. Users are therefore
-encouraged to load and test the software's suitability as regards their
-requirements in conditions enabling the security of their systems and/or 
-data to be ensured and,  more generally, to use and operate it in the 
-same conditions as regards security. 
-
-The fact that you are presently reading this means that you have had
-knowledge of the CeCILL license and that you accept its terms.
-*/
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -191,7 +153,7 @@ static void gmm_compute_params (int n, const float * v, const float * p,
 
   } else {
     /* fast and complicated */
-
+    
     if(n_thread<=1) 
       compute_sum_dcov(n,k,d,v,mu_old,p,g->mu,g->sigma,g->w);
     else
@@ -309,13 +271,13 @@ static void softmax_ref(int k, int n, const float *f, float *p, float *coeffs) {
 
     /* find max */
     float maxval = -1e30;
-    for(l = 0; l < k; l++) /* loop over examples */
+    for(l = 0; l < k; l++) 
       if(F(l, i) > maxval) maxval = F(l, i);
 
     float s = 0.0;
     for(l = 0; l < k; l++) {
       /* P(l, i) = exp(F(l, i) - maxval); */
-      if(F(l, i) > maxval - norm_to_0) {
+      if(F(l, i) >= maxval - norm_to_0) {
         P(l, i) = exp(F(l, i) - maxval);
         s += P(l, i); 
       } else 
@@ -324,10 +286,12 @@ static void softmax_ref(int k, int n, const float *f, float *p, float *coeffs) {
 
     if(coeffs) 
       coeffs[i] = log(s) + maxval;
-    
-    float is = 1.0 / s;
-    for(l = 0; l < k; l++) 
-      P(l, i) *= is;
+
+    if(s != 0) {
+      float is = 1.0 / s;
+      for(l = 0; l < k; l++) 
+	P(l, i) *= is;
+    }
   }
 
 #undef F
@@ -390,6 +354,7 @@ void gmm_compute_p (int n, const float * v,
       p[i * k + j] = logdetnr[j] - 0.5 * p[i * k + j] + lg[j];
     }
   }
+
   free(lg);
   softmax_ref(k, n, p, p, NULL);
 
@@ -547,16 +512,28 @@ size_t gmm_fisher_sizeof(const gmm_t * g,int flags) {
 }
 
 
+
 void gmm_fisher(int n, const float *v, const gmm_t * g, int flags, float *dp_dlambda) {
+  
+  float *p = fvec_new(n * g->k);
+  gmm_compute_p(n,v,g,p,flags | GMM_FLAGS_W);
+  
+  gmm_fisher_from_posteriors(n, v, g, flags, p, dp_dlambda); 
+
+  free(p); 
+
+}
+  
+void gmm_fisher_from_posteriors(int n, const float *v, const gmm_t * g, int flags, const float *p, 
+                                float *dp_dlambda) {
+  
   long d=g->d, k=g->k;
-  float *p = fvec_new(n * k);
   long i,j,l;
   long ii=0;
 
   float * vp = NULL; /* v*p */
   float * sum_pj = NULL; /* sum of p's for a given j */  
 
-  gmm_compute_p(n,v,g,p,flags | GMM_FLAGS_W);
 
 #define P(j,i) p[(i)*k+(j)]
 #define V(l,i) v[(i)*d+(l)]
@@ -566,17 +543,23 @@ void gmm_fisher(int n, const float *v, const gmm_t * g, int flags, float *dp_dla
 
   if(flags & GMM_FLAGS_W) {
 
-    for(j=1;j<k;j++) {
-      double accu=0;
-      
-      for(i=0;i<n;i++) 
-        accu+= P(j,i)/g->w[j] - P(0,i)/g->w[0];
+
+    float *accus = fvec_new_0(k); 
+    
+    for(i=0;i<n;i++) 
+      for(j=1;j<k;j++) 
+        accus[j] += P(j,i)/g->w[j] - P(0,i)/g->w[0];
+    
+    for(j=1;j<k;j++) {        
+      double accu=accus[j];
       
       /* normalization */
       double f=n*(1/g->w[j]+1/g->w[0]);
       
       dp_dlambda[ii++]=accu/sqrt(f);
     }
+    free(accus);
+    
   } 
 
   if(flags & GMM_FLAGS_MU) {
@@ -603,12 +586,10 @@ void gmm_fisher(int n, const float *v, const gmm_t * g, int flags, float *dp_dla
       vp = fvec_new(k * d);
       fmat_mul_tr(v,p,d,k,n,vp);
 
-      sum_pj = fvec_new(k);
-      for(j=0;j<k;j++) {        
-        double sum=0;        
-        for(i=0;i<n;i++) sum += P(j,i);        
-        sum_pj[j] = sum;
-      }
+      sum_pj = fvec_new_0(k);
+      for(i=0;i<n;i++) 
+        for(j=0;j<k;j++) 
+          sum_pj[j] += P(j,i);        
 
       for(j=0;j<k;j++) {
         for(l=0;l<d;l++)
@@ -726,11 +707,88 @@ void gmm_fisher(int n, const float *v, const gmm_t * g, int flags, float *dp_dla
 #undef V
 #undef MU
 #undef SIGMA
-  free(p);
   free(sum_pj);
   free(vp);
 }
 
+
+/*  Translation of Python
+
+        Q_sum = np.sum(Q, 0) / N                    
+        Q_ll = np.dot(Q.T, ll) / N
+        Q_ll_2 = np.dot(Q.T, ll ** 2) / N
+                        
+
+        d_mm = Q_ll - Q_sum.reshape(-1, 1) * mm.ravel()
+        d_S = -Q_ll_2 + 2 * Q_ll * mm + Q_sum.reshape(-1, 1) * (S - mm ** 2)          
+  
+
+*/
+
+void gmm_fisher_spatial(int N, int K, int D, 
+                        const float *Q, 
+                        const float *sgmm, 
+                        const float *ll, 
+                        float *sdesc) {
+  float *Q_sum = fvec_new_0(K); 
+  
+  {
+    long k, n;
+    for(n = 0; n < N; n++) 
+      for(k = 0; k < K; k++) 
+        Q_sum[k] += Q[n * K + k];     
+    for(k = 0; k < K; k++) Q_sum[k] /= N;
+  }
+
+  float *Q_ll, *Q_ll_2; 
+  
+  {
+    /* prepare a matrix containing both ll and ll**2 */
+    
+    float *ll_ll2 = fvec_new(D * 2 * N); 
+    fvec_cpy(ll_ll2, ll, D * N); 
+    float *ll2 = ll_ll2 + D * N; 
+    long i;
+    for(i = 0; i < D * N; i++) 
+      ll2[i] = ll[i] * ll[i]; 
+
+    /* compute Q.T * ll_ll2 */
+
+    FINTEGER mi = K, ni = 2 * D, ki = N; 
+    float one_over_N = 1.0 / N, zero = 0; 
+    Q_ll = fvec_new(K * 2 * D);
+    Q_ll_2 = Q_ll + K * D; 
+    sgemm_("N", "N", &mi, &ni, &ki, 
+           &one_over_N, Q, &mi, 
+           ll_ll2, &ki, 
+           &zero, Q_ll, &mi); 
+    free(ll_ll2);   
+  }
+
+  {
+    const float *mm = sgmm; 
+    float *d_mm = sdesc; 
+    long k, d; 
+    for(d = 0; d < D; d++) 
+      for(k = 0; k < K; k++) 
+        d_mm[d + k * D] = Q_ll[K * d + k] - Q_sum[k] * mm[d]; 
+    
+    float *d_S = sdesc + K * D; 
+    const float *S = sgmm + D;
+    for(d = 0; d < D; d++) {
+      float dfact = S[d] - mm[d] * mm[d]; 
+      for(k = 0; k < K; k++) 
+        d_S[d + k * D] = -Q_ll_2[K * d + k] + 2 * Q_ll[K * d + k] * mm[d] + Q_sum[k] * dfact; 
+    }
+
+
+  }
+
+
+  free(Q_ll); 
+  free(Q_sum);  
+}
+                 
 
 
 void gmm_print(const gmm_t *g) {

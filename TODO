@@ -1,0 +1,44 @@
+
+1) k-means error message for singular cases
+
+The reason is as follows. As you probably know, k-means can generate void
+clusters if the centroid is assigned to another center. In the case you mention,
+you ask to find 4096 centroids with only 10000 points on input, meaning that you
+are going to have a lot a void clusters created. 
+
+In yael, we make a test to ensure that there is no too many empty clusters, see
+kmeans.c 
+
+    if(tot_nreassign>n/100 && tot_nreassign>1000) {
+      fprintf (stderr,"# kmeans: reassigned %d times, abandoning\n",
+tot_nreassign);
+      ret = -1;
+      goto out; 
+    }      
+
+There is a message error displayed on the stderr console, but you can probably
+see it only if you launch Matlab from a terminal (As I usually do): 
+
+# kmeans warning: 646 empty clusters -> split
+# kmeans: reassigned 1274 times, abandoning
+
+Concerning the other case, 
+cc = yael_kmeans(single(ones(1,10000)), k)
+
+It is indeed the same reason: as all the values are identical, you can not
+create more than 1 cluster. The console shows
+# kmeans warning: 19 empty clusters -> split
+
+because all the points are assigned to a single cluster. The algorithms splits
+it into two before leaving, that is why you have 2 clusters. The other centers
+are NaN because no descriptors was assigned to them. 
+
+Well, I don't know if this should be treated as a bug of the k-means because the
+input can not be clustered with the input arguments and that the algorithms
+detects this at the C level. But you are right: we should export the error more
+explictly at the Matlab interface level. -> I add this to the TODO list.
+
+Best wishes,
+
+-- rv
+

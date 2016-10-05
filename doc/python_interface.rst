@@ -1,12 +1,62 @@
 Python interface
 ================
 
-The whole C API is exposed in Python using SWIG, hence the \tc{.swg}
-files in the subdirectories. This allows to call C functions from
-Python more or less transparently.
+High-level interface
+--------------------
 
-Loading and using Yael
------------------------
+The high-level interface of yael is ``ynumpy``. It gives access to the
+the functions of Yael that are not implemented in Numpy or are
+implemented inefficiently. The functions take a few mandatory
+arguments, optional ones can be used to change the default behaviour. 
+
+All matrix arguments must be in C-order ``float32`` arrays, because
+numpy's support for Fortran-style indexing (used in the Matlab and C
+versions) is close to unusable. Therefore, in the C API
+documentation, all references to "columns" should become "lines".
+
+The available functions are:
+
+* ``knn(queries, base, nnn = 1, distance_type = 2, nt = 1)`` Computes
+  the exact `nnn` nearest-neighbors of each line of the ``queries`` in
+  each of the lines in the ``base`` matrix. Supported distance types
+  are 2 (Euclidean), 1 (L1), 3 (symmetric Chi^2), 5 (histogram
+  intersection). The outputs are a n-by-nnn table of int32 indices and
+  a squared distance table of the same size. The option ``nt`` gives
+  the number of computing threads to use.
+
+* ``kmeans(v, k, distance_type = 2, nt = 1, niter = 30, seed = 0, redo = 1, verbose = True, output = 'centroids')``
+  computes a k-means on the set of vectors ``v`` with ``k`` centroids. Returns 
+  the kmeans centroids as a n-by-k matrix. When the ouput is set to ``full`` it additionally 
+  returns ``(centroids, qerr, dis, assign, nassign)``:
+  the quantization error, the vector-centroid distance matrix, the assignment table and the 
+  number of assignments per centroid.
+
+* ``cross_distances(a, b, distance_type = 12)`` computes the pairwise
+  distances between the sets of vectors ``a`` and ``b``, expressed as
+  matrices. The ``distance_type`` argument has the same meaning as for ``knn``.
+
+* ``partial_pca(mat, nev = 6, nt = 1)`` computes a partial PCA matrix
+  for vectors in matrix ``mat``. It returns ``(avg, singvals,
+  pcamat)``: the average vector, the singular values and the PCA
+  matrix, with ``nev`` lines.
+
+* ``gmm_learn(v, k, nt = 1, niter = 30, seed = 0, redo = 1)`` computes
+  a Gaussian Mixture Model with diagonal covariance matrix, with ``k``
+  centroids for the vector in ``v``. It returns a triplet ``(w, mu,
+  sigma)`` containing the weight of each Gaussian, the centroids and
+  the diagonal covariance matrix.
+
+Yael should be compiled with ``--enable-numpy``. Assuming that the
+``PYTHONPATH`` environment variable is set to Yael's installation
+root, the recommended way of using this interface is with::
+
+  from yael import ynumpy 
+  ynumpy.knn(...)
+
+Low-level interface
+-------------------
+
+In the low-level interface, all of the C Yael functions are accessible. 
 
 Assuming that the ``PYTHONPATH`` environment variable is set to Yael's
 installation root, importing the Yael interface and creating a new
@@ -17,7 +67,7 @@ vector is done as::
 
 
 In order to shorten the call, one could also import the function 
-in the current namespace, as
+in the current namespace, as::
 
   from yael.yael import *
   a = fvec_new_0(5)
@@ -26,7 +76,7 @@ However, we do not advise to do so, in order to avoid function name
 conflicts when using other python libraries jointly with Yael.
 
 Guidelines for the wrapping process
------------------------------------
+```````````````````````````````````
 
 * for most of the objects, memory is **not** managed by Python. They
   must be free'd explicitly. The main exception is for vectors, which
@@ -75,8 +125,8 @@ Guidelines for the wrapping process
 * output arguments in the C code (their names end in ``_out``) are
   combined with the function results tuples.
 
-NumPy interface
----------------
+Low-level to Numpy interface
+````````````````````````````
 
 If Yael is configured with ``--enable-numpy``, arrays can be exchanged
 with Numpy arrays. This is done through a series of functions with
@@ -87,7 +137,7 @@ self-explanatory names::
   numpy_to_fvec 
   numpy_to_ivec 
 
-Arrays corresponding to Yael's ``fvec``are of Numpy's
+Arrays corresponding to Yael's ``fvec`` are of Numpy's
 ``dtype='float32'``. Moving from yael to numpy produces line vectors,
 that can be reshaped to matrices if needed.
 
@@ -96,26 +146,9 @@ between Yael and Numpy, suffix the function with ``_ref``.
 
 See the ``test_numpy.py`` program for an example usage. 
 
-Numpy interface (high level)
-----------------------------
-
-A few functions of Yael are also made available with pure Numpy
-arguments and return types. They are in the ``ynumpy`` module. They
-include::
-
-  knn
-  kmeans
-  fvecs_read ivecs_read siftgeo_read
-
-All matrix arguments should be in C indexing, because numpy's support
-for Fortran-style indexing is close to unusable. Therefore, in the
-function documentation, all references to "columns" should become
-"lines". See ``test_ynumpy.py`` for an example.
-
-
 
 ctypes interface
-----------------
+````````````````
 
 Arrays can also be exchanged with ctypes. This is done by converting
 pointers to integers. See ``test_ctypes.py`` for an example.

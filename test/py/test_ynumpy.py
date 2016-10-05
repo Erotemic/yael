@@ -34,8 +34,9 @@ print dis
 
 try: 
     # v, meta = ynumpy.siftgeo_read('/Users/matthijs//Desktop/papers/lhl/trunk/data/test_query_10k.siftgeo')
-    v, meta = ynumpy.siftgeo_read('/scratch2/bigimbaz/dataset/holidays/siftgeo/hesaff_norm/128300.siftgeo')
 
+    # v, meta = ynumpy.siftgeo_read('/scratch2/bigimbaz/dataset/holidays/siftgeo/hesaff_norm/128300.siftgeo')
+    v, meta = ynumpy.siftgeo_read('/tmp/128300.siftgeo')
     v = v.astype('float32')
     
 except Exception, e: 

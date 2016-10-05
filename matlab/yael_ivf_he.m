@@ -51,7 +51,7 @@ else
 end
 
 if ~exist('quantizer_params')
-  ivfhe.quantizer_params = yael_kmeans (v, k, 'niter', niter, 'verbose', 0);
+  ivfhe.quantizer_params = yael_kmeans (v, k, 'niter', niter, 'verbose', 1);
 else
   ivfhe.quantizer_params = quantizer_params; 
 end

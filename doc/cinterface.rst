@@ -1,6 +1,8 @@
 C interface
 ===========
 
+.. highlight:: c
+
 The C API is object-oriented whenever applicable, with constructors
 and destructors for each structure.
 
@@ -36,7 +38,9 @@ operating on them are prefixed with:
 
 Most of the functions are associated with ``ivec``  and ``fvec`` types. 
 Vector sizes are passed explicitly, as long int's to allow for
-large arrays on 64 bit machines. Vectors can be free'd with ``free()``::
+large arrays on 64 bit machines. Vectors can be free'd with ``free()``
+
+.. code-block:: c
 
   /* Generate a random array using a thread-safe function */
   long n = 100;	\

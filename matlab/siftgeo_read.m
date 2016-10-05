@@ -7,19 +7,20 @@
 %   v           the sift descriptors (1 descriptor per line)
 %   meta        meta data for each descriptor, i.e., per line:
 %               x, y, scale, angle, mi11, mi12, mi21, mi22, cornerness
-function [v, meta] = siftgeo_read (filename, dv)
+function [v, meta] = siftgeo_read (filename, dv, maxn)
 
-if nargin < 2
-  dv = 128;
-end
-  
+if nargin < 2, dv = 128; end
+
+if nargin < 3, maxn = 10^9+1; end
+
+
 % open the file and count the number of descriptors
 fid = fopen (filename, 'r');
 
 if fid==-1
   error('could not open %s',filename)
 end
- 
+
 fseek (fid, 0, 1);
 n = ftell (fid) / (9 * 4 + 1 * 4 + dv);
 fseek (fid, 0, -1);
@@ -38,4 +39,3 @@ for i = 1:n
 end
 
 fclose (fid);
-

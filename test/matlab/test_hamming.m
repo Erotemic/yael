@@ -33,10 +33,10 @@ a = uint8 (randi (256, d, na) - 1);
 b = uint8 (randi (256, d, nb) - 1);
 
 
-% tic
-% dis = yael_hamming (a, b) ; 
-% [ids2, hdis2] = find(dis < ht); 
-% toc
+tic
+dis = yael_hamming (a, b) ; 
+[ids2, hdis2] = find(dis < ht); 
+toc
 
 tic
 [ids, hdis] = yael_hamming (a, b, ht); toc
@@ -44,5 +44,3 @@ tic
 
 fprintf ('nb neighbors=%d (avg=%.2f)\nmin distance=%d\n', ...
          numel(ids(:)), numel(ids(:))/nb, min(hdis(:)));
-%max(ids(:))
-%max(hdis(:))

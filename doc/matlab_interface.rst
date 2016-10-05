@@ -1,6 +1,8 @@
 Matlab
 ======
 
+.. highlight:: matlab
+
 This chapter is dedicated to the Matlab interface. However, most of the
 comments here have their Octave equivalent.
 

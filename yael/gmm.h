@@ -1,41 +1,3 @@
-/*
-Copyright © INRIA 2010-2011. 
-Authors: Matthijs Douze & Herve Jegou 
-Contact: matthijs.douze@inria.fr  herve.jegou@inria.fr
-
-This software is a computer program whose purpose is to provide 
-efficient tools for basic yet computationally demanding tasks, 
-such as find k-nearest neighbors using exhaustive search 
-and kmeans clustering. 
-
-This software is governed by the CeCILL license under French law and
-abiding by the rules of distribution of free software.  You can  use, 
-modify and/ or redistribute the software under the terms of the CeCILL
-license as circulated by CEA, CNRS and INRIA at the following URL
-"http://www.cecill.info". 
-
-As a counterpart to the access to the source code and  rights to copy,
-modify and redistribute granted by the license, users are provided only
-with a limited warranty  and the software's author,  the holder of the
-economic rights,  and the successive licensors  have only  limited
-liability. 
-
-In this respect, the user's attention is drawn to the risks associated
-with loading,  using,  modifying and/or developing or reproducing the
-software by the user in light of its specific status of free software,
-that may mean  that it is complicated to manipulate,  and  that  also
-therefore means  that it is reserved for developers  and  experienced
-professionals having in-depth computer knowledge. Users are therefore
-encouraged to load and test the software's suitability as regards their
-requirements in conditions enabling the security of their systems and/or 
-data to be ensured and,  more generally, to use and operate it in the 
-same conditions as regards security. 
-
-The fact that you are presently reading this means that you have had
-knowledge of the CeCILL license and that you accept its terms.
-*/
-
-
 #ifndef GMM_H_INCLUDED
 #define GMM_H_INCLUDED
 
@@ -133,9 +95,34 @@ void gmm_compute_p (int n, const float * v,
 void gmm_fisher (int n, const float *v, const gmm_t * g, 
                  int flags, float * fisher_vector_out);
 
+
+/*! Same as gmm_fisher, with precomputed posterior probabilities 
+ * @param p(k,n)            posterior probabilities (result of   gmm_compute_p(n,v,g,p,flags | GMM_FLAGS_W);
+ */
+  
+void gmm_fisher_from_posteriors (int n, const float *v, const gmm_t * g, int flags, const float *p, 
+                                 float * fisher_vector_out);
+
+
 size_t gmm_fisher_sizeof (const gmm_t * g, int flags);
 
 
+/* Compute spatial components for a Fisher descriptor. 
+   @param N            nb of local descriptors
+   @param K            nb of centroids 
+   @param D            dimension of meta-information (spatial) associated to each local descriptor
+   @param Q(K, N)      posterior probabilities computed from the descriptor
+   @param sgmm(D, 2)   mean is sgmm(:, 0) and sigma sgmm(:, 1) for the meta-info of the descriptors
+   @param ll(N, D)     local descriptors meta info
+   
+   @return sdesc(D, K, 2) output descriptor    
+*/
+
+void gmm_fisher_spatial(int N, int K, int sd, 
+                        const float *Q, 
+                        const float *sgmm, 
+                        const float *ll, 
+                        float *sdesc); 
 
 /*! write the GMM structure parameter into a file */
 void gmm_write(const gmm_t *g, FILE *f); 

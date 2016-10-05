@@ -1,6 +1,7 @@
 Getting Started
 ===============
 
+.. highlight:: bash
 
 Getting SVN version and content
 -------------------------------

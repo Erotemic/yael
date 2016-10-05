@@ -29,7 +29,11 @@ lapackldflags='-lblas -llapack'
 # -llapack on Ubuntu and Fedora Core Linux. Warn: on FC14, -lblas is
 # available but very slow. 
 
-if [ -e /usr/lib/libblas.so.3gf ]; then
+if [ -e /usr/lib64/atlas/libtatlas.so ]; then
+   # blas and lapack lib on Fedora Core 21, libTatlas is for the multi-threaded version
+   # libSatas is for single-threaded
+   lapackldflags="/usr/lib64/atlas/libtatlas.so"
+elif [ -e /usr/lib/libblas.so.3gf ]; then
    # special names for libs on ubuntu
    lapackldflags="/usr/lib/libblas.so.3gf /usr/lib/liblapack.so.3gf"
 elif [ -e /usr/lib64/atlas/libblas.so.3 ]; then 
@@ -122,12 +126,13 @@ while [ $# -gt 0 ] ; do
 	--debug)    cflags="${cflags/ -O3/}" ;;
 	
 	--yael=*)   yaelprefix=${a#*=};;
-        --swig=*)   swig=${a#*=} ;;
-	--lapack=*) lapackldflags=${a#*=} ;;
-        --enable-arpack) usearpack=yes;;
-	--arpack=*) arpackldflags=${a#*=} ;;
-  --msse4)    cflags="$cflags -msse4 " ;;
-	--fortran-64bit-int) 
+    --swig=*)   swig=${a#*=} ;;
+    --noswig)   swig='' ;;
+    --lapack=*) lapackldflags=${a#*=} ;;
+    --enable-arpack) usearpack=yes;;
+    --arpack=*) arpackldflags=${a#*=} ;;
+    --msse4)    cflags="$cflags -msse4 " ;;
+    --fortran-64bit-int)
             lapackcflags="$lapackcflags -DFINTEGER=long" ;;       
 
 	--mac32)    
@@ -168,11 +173,15 @@ if [ -z "$swig" ]; then
   if which swig ; then
     swig=swig
   else 
-    echo "Error: no swig executable found. Provide one with --swig"
-    exit 1
+    echo "Warning: no swig executable found. Provide one with --swig to active python interface"
   fi
 fi
 
+if [ -z "$swig" ]; then
+    swig="no"
+else
+    swig="$swig -python"
+fi
 
 cat <<EOF | tee makefile.inc
 
@@ -189,8 +198,7 @@ YAELCONF=$conf
 YAELCFLAGS=-I$yaelinc
 YAELLDFLAGS=-L$yaellib -Wl,-rpath,$yaellib -lyael
 
-
-SWIG=$swig -python
+SWIG=$swig
 
 WRAPLDFLAGS=$wrapldflags
 LAPACKLDFLAGS=$lapackldflags
