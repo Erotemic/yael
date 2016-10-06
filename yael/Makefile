@@ -30,7 +30,7 @@ all: libyael.a libyael.$(SHAREDEXT) $(PYTARGETS)
 
 LIBOBJ=matrix.o vector.o nn.o kmeans.o hkm.o gmm.o eigs.o \
        spectral_clustering.o sorting.o binheap.o machinedeps.o vlad.o kmlsh.o \
-       ivf.o hamming.o 
+       ivf.o hamming.o progiter.o
 
 libyael.a: $(LIBOBJ)
 	ar r libyael.a $^
@@ -46,6 +46,8 @@ nn.o: EXTRACFLAGS=$(LAPACKCFLAGS) $(THREADCFLAGS) $(OPENMPFLAG)
 matrix.o: EXTRACFLAGS=$(LAPACKCFLAGS) $(THREADCFLAGS) $(EXTRAMATRIXFLAG) $(OPENMPFLAG)
 
 kmeans.o: EXTRACFLAGS=$(THREADCFLAGS)
+
+progiter.o: EXTRACFLAGS=$(THREADCFLAGS)
 
 hkm.o: EXTRACFLAGS=$(THREADCFLAGS)
 
@@ -86,10 +88,11 @@ __init__.py:
 
 # for i in *.c ; do cpp -I.. -MM $i; done
 
+progiter.o: progiter.h progiter.c
 binheap.o: binheap.c binheap.h sorting.h
 eigs.o: eigs.c eigs.h vector.h sorting.h machinedeps.h 
 gmm.o: gmm.c vector.h matrix.h kmeans.h nn.h gmm.h sorting.h
-kmeans.o: kmeans.c vector.h kmeans.h nn.h sorting.h
+kmeans.o: kmeans.c vector.h kmeans.h nn.h sorting.h progiter.h progiter.c
 hkm.o: hkm.c hkm.h kmeans.h vector.h kmeans.h nn.h
 machinedeps.o: machinedeps.c machinedeps.h
 matrix.o: matrix.c matrix.h vector.h sorting.h machinedeps.h eigs.h

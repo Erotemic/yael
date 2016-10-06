@@ -9,6 +9,7 @@
 #include "kmeans.h"
 #include "nn.h"
 #include "machinedeps.h"
+#include "progiter.h"
 
 
 /*
@@ -40,14 +41,23 @@ static void kmeanspp_init(long d, int n, int k, const float * v,
     */
     float * disbest = fvec_new_set(n, HUGE_VAL);
     float * distmp = fvec_new(n);
+
+    ProgIter prog;  // for verbosity 
+    if(verbose)
+    {
+        ProgIter_init(&prog, k, "[kmeans++]");
+        ProgIter_begin(&prog);
+    }
+
     sel[0] = rand_r(&seed) % k;
     for(i = 1 ; i < k ; i++)
     {
         int newsel = sel[i - 1];
         if(verbose && i % 10 == 0)
         {
-            printf("%d/%d\r", (int)i, k);
-            fflush(stdout);
+            ProgIter_marki(&prog, i);
+            /*printf("%d/%d\r", (int)i, k);*/
+            /*fflush(stdout);*/
         }
         if(0)   /* simple and slow */
         {
@@ -85,7 +95,9 @@ static void kmeanspp_init(long d, int n, int k, const float * v,
     }
     if(verbose)
     {
-        printf("\n");
+        ProgIter_end(&prog);
+        ProgIter_delete(&prog);
+        /*printf("\n");*/
     }
     free(disbest);
     free(distmp);
@@ -243,8 +255,18 @@ static int kmeans_core(int d, int n, int k, int niter, int nt, int flags, int ve
         tmp_cumsum = ivec_new(k);
     }
     int tot_nreassign = 0;
+    ProgIter prog;
+    if(verbose)
+    {
+        ProgIter_init(&prog, niter, "[kmeans_core]");
+        ProgIter_begin(&prog);
+    }    
     for(iter = 1 ; iter <= niter ; iter++)
     {
+        if(verbose)
+        {
+            ProgIter_marki(&prog, iter);
+        }
         (*iter_tot)++;
         /* Assign point to cluster and count the cluster size */
         knn_full_thread(flags & KMEANS_L1 ? 1 :
@@ -335,6 +357,11 @@ static int kmeans_core(int d, int n, int k, int niter, int nt, int flags, int ve
     }
     *qerr_out = qerr;
 out:
+    if(verbose)
+    {
+        ProgIter_end(&prog);
+        ProgIter_delete(&prog);
+    }
     free(tmp_cumsum);
     free(tmp_v);
     return ret;
